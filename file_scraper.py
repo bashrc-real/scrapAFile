@@ -44,12 +44,13 @@ def TryReadUrl(url):
       user_agent = user_agents[random.randint(1, len(user_agents)) - 1]
       header={'User-Agent':user_agent}
       req = urllib.request.Request(url, headers=header)
-      return urllib.request.urlopen(req)
-
+      response = urllib.request.urlopen(req)
+      if response.info()['Content-Type'] == "text/html":
+        return response
   except Exception as detail:
       print(detail)
       print("TryReadUrl:Couldn't load file:"+url)
-      return ""
+      
 
 
 def do_parsing(data):
@@ -72,6 +73,7 @@ def do_parsing(data):
         return
       pageData = str(fr.read())
       idx = 0
+      urls = []
       while idx!=-1:
         patToSearch = "href=\""
         idx = pageData.find(patToSearch,idx)
@@ -94,9 +96,10 @@ def do_parsing(data):
             nexturl = baseURL+nexturl
           if nexturl not in VisitedURL:
             VisitedURL.update(nexturl)
-            q.extend([[nexturl,depth+1]])
+            urls.append([nexturl,depth+1])
           if len(VisitedURL) > 100000:
             VisitedURL.clear()
+      return urls
     except Exception:
        pass       
 def crawl_from_url(pool):
@@ -111,8 +114,8 @@ def crawl_from_url(pool):
       url, depth = q.popleft()
       if depth < DEFAULT_MAX_DEPTH:
         urlsToMap.append((url,depth))
-    for result in pool.map(do_parsing, urlsToMap):
-      result = result
+    for item in (result for result in pool.map(do_parsing, urlsToMap) if result != None):
+      q.extend(item)
     output.flush()
     os.fsync(output.fileno())       
 def main(arguments):
