@@ -12,9 +12,11 @@ import multiprocessing
 import concurrent
 from concurrent import futures
 import threading
+import HashRabinKarp
+from HashRabinKarp import HashString
 DEFAULT_MAX_DEPTH = 10
 DEFAULT_NUMBER_OF_THREADS = 4
-VisitedURL = set()
+VisitedURL = HashString()
 keywords = []
 q = deque()
 default_path = "./url.txt"
@@ -88,17 +90,15 @@ def do_parsing(data):
             outerIdx = nexturl.rfind("http",0,innerIdx)
             if innerIdx !=-1 and outerIdx != -1:
               nexturl = nexturl[outerIdx:innerIdx] +key
-              if nexturl not in VisitedURL:
-                VisitedURL.update(nexturl)
+              if not VisitedURL.query(nexturl):
+                VisitedURL.add(nexturl)
                 output.write(nexturl+"\n")
                 continue
           if nexturl.find("http")!=0:
             nexturl = baseURL+nexturl
-          if nexturl not in VisitedURL:
-            VisitedURL.update(nexturl)
+          if not VisitedURL.query(nexturl):
+            VisitedURL.add(nexturl)
             urls.append([nexturl,depth+1])
-          if len(VisitedURL) > 100000:
-            VisitedURL.clear()
       return urls
     except Exception:
        pass       
