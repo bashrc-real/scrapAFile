@@ -18,11 +18,5 @@ class HashString:
         if not isinstance(value, str):
             raise TypeError("Cannot call with non-string type")
         return self.ComputeHash(value) in self.numberHash
-if __name__ == "__main__":
-     hash = HashString()
-     hash.add("saurabh")
-     if hash.query("saurabh"):
-         print("Exists")
-     if not hash.query("Saurabh"):
-         print("Does not exist")
+
          
