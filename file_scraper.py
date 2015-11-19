@@ -14,12 +14,16 @@ from concurrent import futures
 import threading
 import HashRabinKarp
 from HashRabinKarp import HashString
+from threading import Thread
+import posixpath
+from urllib.parse import urlparse
 DEFAULT_MAX_DEPTH = 10
 DEFAULT_NUMBER_OF_THREADS = 4
 VisitedURL = HashString()
 keywords = []
 q = deque()
 default_path = "./url.txt"
+global output_path
 global output    
 def TryReadUrl(url):
   try:
@@ -47,14 +51,24 @@ def TryReadUrl(url):
       header={'User-Agent':user_agent}
       req = urllib.request.Request(url, headers=header)
       response = urllib.request.urlopen(req)
-      if response.info()['Content-Type'] == "text/html":
+      if response.info()['Content-Type'].find("text/html") != -1:
         return response
   except Exception as detail:
       print(detail)
       print("TryReadUrl:Couldn't load file:"+url)
       
-
-
+def DownloadPdf(url):
+  global output_path
+  if not output_path or (len(output_path) == 0):
+    return
+  try:
+    path = urllib.parse.urlsplit(url).path.split('/')[-1]
+    filename = posixpath.basename(path)
+    local_filename, headers = urllib.request.urlretrieve(url, output_path + "\\"+filename)
+  except Exception as detail:
+    print(detail)
+  return
+cntr = 0
 def do_parsing(data):
     try:
       print(threading.current_thread())
@@ -73,7 +87,9 @@ def do_parsing(data):
       fr = TryReadUrl(url)
       if  not fr:
         return
+      global cntr
       pageData = str(fr.read())
+      cntr = cntr+1
       idx = 0
       urls = []
       while idx!=-1:
@@ -93,6 +109,7 @@ def do_parsing(data):
               if not VisitedURL.query(nexturl):
                 VisitedURL.add(nexturl)
                 output.write(nexturl+"\n")
+                Thread(target = DownloadPdf, args = (nexturl,)).start()
                 continue
           if nexturl.find("http")!=0:
             nexturl = baseURL+nexturl
@@ -100,7 +117,8 @@ def do_parsing(data):
             VisitedURL.add(nexturl)
             urls.append([nexturl,depth+1])
       return urls
-    except Exception:
+    except Exception as detail:
+       print(detail)
        pass       
 def crawl_from_url(pool):
   global DEFAULT_NUMBER_OF_THREADS
@@ -125,12 +143,14 @@ def main(arguments):
     global output
     global default_path
     global DEFAULT_MAX_DEPTH
+    global output_path
     parser = argparse.ArgumentParser(description='Scrape the web from a seed url to find the documents matching particular keyword')
     parser.add_argument('keywords', metavar='N', type=str, nargs='+',help='keywords to look for')
     parser.add_argument('-S', type=str,required=True, help="seed url")
     parser.add_argument('-t', type=int, help="number of threads, default = " + str(DEFAULT_NUMBER_OF_THREADS), default=DEFAULT_NUMBER_OF_THREADS)
     parser.add_argument('-path', type=str, help="path to the output file , default = "+default_path, default=default_path)
     parser.add_argument('-depth', type=int, help="depth to which need to visit , default = "+str(DEFAULT_MAX_DEPTH), default=DEFAULT_MAX_DEPTH)
+    parser.add_argument('-output', type=str, help="Download folder path , default = ./", default="")
     arguments = parser.parse_args()
     DEFAULT_NUMBER_OF_THREADS = arguments.t
     keywords = arguments.keywords
@@ -138,6 +158,7 @@ def main(arguments):
     q.append((arguments.S, 0))
     pool = concurrent.futures.thread.ThreadPoolExecutor(max_workers=DEFAULT_NUMBER_OF_THREADS)
     default_path = arguments.path
+    output_path = arguments.output
     output = open(default_path, 'w')
     crawl_from_url(pool)
     
