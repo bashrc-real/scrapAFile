@@ -146,7 +146,7 @@ def main(arguments):
     global output_path
     parser = argparse.ArgumentParser(description='Scrape the web from a seed url to find the documents matching particular keyword')
     parser.add_argument('keywords', metavar='N', type=str, nargs='+',help='keywords to look for')
-    parser.add_argument('-S', type=str,required=True, help="seed url")
+    parser.add_argument('-S', type=str,required=True, nargs='+',help="seed url")
     parser.add_argument('-t', type=int, help="number of threads, default = " + str(DEFAULT_NUMBER_OF_THREADS), default=DEFAULT_NUMBER_OF_THREADS)
     parser.add_argument('-path', type=str, help="path to the output file , default = "+default_path, default=default_path)
     parser.add_argument('-depth', type=int, help="depth to which need to visit , default = "+str(DEFAULT_MAX_DEPTH), default=DEFAULT_MAX_DEPTH)
@@ -155,7 +155,7 @@ def main(arguments):
     DEFAULT_NUMBER_OF_THREADS = arguments.t
     keywords = arguments.keywords
     DEFAULT_MAX_DEPTH = arguments.depth
-    q.append((arguments.S, 0))
+    q.extend([(iter,0) for iter in arguments.S])
     pool = concurrent.futures.thread.ThreadPoolExecutor(max_workers=DEFAULT_NUMBER_OF_THREADS)
     default_path = arguments.path
     output_path = arguments.output
