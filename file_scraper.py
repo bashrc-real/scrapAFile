@@ -57,7 +57,7 @@ def TryReadUrl(url):
       print(detail)
       print("TryReadUrl:Couldn't load file:"+url)
       
-def DownloadPdf(url):
+def Download(url):
   global output_path
   if not output_path or (len(output_path) == 0):
     return
@@ -109,7 +109,7 @@ def do_parsing(data):
               if not VisitedURL.query(nexturl):
                 VisitedURL.add(nexturl)
                 output.write(nexturl+"\n")
-                Thread(target = DownloadPdf, args = (nexturl,)).start()
+                Thread(target = Download, args = (nexturl,)).start()
                 continue
           if nexturl.find("http")!=0:
             nexturl = baseURL+nexturl
