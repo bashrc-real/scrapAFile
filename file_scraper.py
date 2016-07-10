@@ -57,17 +57,21 @@ def TryReadUrl(url):
       print(detail)
       print("TryReadUrl:Couldn't load file:"+url)
       
-def Download(url):
-  global output_path
+def DownloadToPath(url, output_path):
   if not output_path or (len(output_path) == 0):
-    return
+    return False
   try:
     path = urllib.parse.urlsplit(url).path.split('/')[-1]
     filename = posixpath.basename(path)
     local_filename, headers = urllib.request.urlretrieve(url, output_path + "\\"+filename)
   except Exception as detail:
-    print(detail)
-  return
+    print(str(detail) + ":" + url)
+  return True
+  
+def Download(url):
+  global output_path
+  return DownloadToPath(url, output_path)
+    
 cntr = 0
 def do_parsing(data):
     try:
